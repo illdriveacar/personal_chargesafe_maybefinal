@@ -86,7 +86,9 @@ const MainPage = ({ onLogout }) => {
   };
 
   const handleEmergencyOpen = (temperature) => {
-    setEmergencyTemperature(temperature ?? null);
+    setEmergencyTemperature(
+      typeof temperature === "number" ? temperature : null
+    );
     setEmergencyView("main");
   };
 
