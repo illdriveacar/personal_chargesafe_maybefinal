@@ -256,6 +256,7 @@ const MainPage = ({ onLogout }) => {
           chargingStatus={
             common?.chargingStatus
           }
+          onEmergencyClick={handleEmergencyOpen}
         />
 
         <MainArea $isCollapsed={isCollapsed}>
