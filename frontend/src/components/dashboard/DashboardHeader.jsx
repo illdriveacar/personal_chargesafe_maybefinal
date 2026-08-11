@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import { Bell, LogOut, UserRound } from "lucide-react";
+import { Bell, LogOut, Menu, UserRound } from "lucide-react";
 
 import NotificationDropdown from "../notification/NotificationDropdown";
 
@@ -14,6 +14,7 @@ const DashboardHeader = ({
   onReadNotification,
   onReadAllNotifications,
   onOpenNotificationCenter,
+  onOpenMobileMenu,
 }) => {
   const [isNotificationOpen, setIsNotificationOpen] =
     useState(false);
@@ -56,16 +57,26 @@ const DashboardHeader = ({
 
   return (
     <HeaderContainer>
-      <TitleArea>
-        <Title>{title}</Title>
+      <LeftArea>
+        <MobileMenuButton
+          type="button"
+          aria-label="메뉴 열기"
+          onClick={onOpenMobileMenu}
+        >
+          <Menu size={20} />
+        </MobileMenuButton>
 
-        {showLiveText && (
-          <>
-            <Separator>·</Separator>
-            <LiveText>실시간 업데이트</LiveText>
-          </>
-        )}
-      </TitleArea>
+        <TitleArea>
+          <Title>{title}</Title>
+
+          {showLiveText && (
+            <>
+              <Separator>·</Separator>
+              <LiveText>실시간 업데이트</LiveText>
+            </>
+          )}
+        </TitleArea>
+      </LeftArea>
 
       <HeaderActions>
         <NotificationWrapper ref={notificationRef}>
@@ -141,6 +152,10 @@ const HeaderContainer = styled.header`
   height: 56px;
   padding: 0 22px;
 
+  @media (max-width: 768px) {
+    padding: 0 12px;
+  }
+
   border-bottom: 1px solid
     ${({ theme }) => theme.colors.border};
 
@@ -149,25 +164,61 @@ const HeaderContainer = styled.header`
   transition: background 0.25s ease;
 `;
 
+const LeftArea = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+`;
+
+const MobileMenuButton = styled.button`
+  display: none;
+
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    color: var(--app-text-primary);
+    background: transparent;
+    cursor: pointer;
+  }
+`;
+
 const TitleArea = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 `;
 
 const Title = styled.h2`
   color: var(--app-header-title);
   font-size: 19px;
   font-weight: 850;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
 const Separator = styled.span`
   color: #b0bacb;
+
+  @media (max-width: 640px) {
+    display: none;
+  }
 `;
 
 const LiveText = styled.span`
   color: #91a0b8;
   font-size: 12px;
+
+  @media (max-width: 640px) {
+    display: none;
+  }
 `;
 
 const HeaderActions = styled.div`
@@ -278,6 +329,10 @@ const ProfileText = styled.span`
   display: flex;
   align-items: flex-start;
   flex-direction: column;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const Name = styled.span`

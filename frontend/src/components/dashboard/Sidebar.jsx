@@ -55,9 +55,14 @@ const Sidebar = ({
   chargePercent,
   chargingStatus,
   onEmergencyClick,
+  isMobileOpen,
+  onCloseMobile,
 }) => {
   return (
-    <SidebarContainer $isCollapsed={isCollapsed}>
+    <SidebarContainer
+      $isCollapsed={isCollapsed}
+      $isMobileOpen={isMobileOpen}
+    >
       <LogoArea $isCollapsed={isCollapsed}>
         <LogoIcon>
           <Zap size={18} strokeWidth={2.4} />
@@ -90,7 +95,10 @@ const Sidebar = ({
               type="button"
               $isActive={isActive}
               $isCollapsed={isCollapsed}
-              onClick={() => onSelectMenu(item.id)}
+              onClick={() => {
+                onSelectMenu(item.id);
+                onCloseMobile?.();
+              }}
               title={isCollapsed ? item.label : undefined}
             >
               <MenuIconArea>
@@ -151,7 +159,15 @@ const SidebarContainer = styled.aside`
   background: var(--app-sidebar-background);
   transition:
     width 0.3s ease,
+    transform 0.3s ease,
     background 0.25s ease;
+  
+  @media (max-width: 768px) {
+    width: 214px;
+    transform: translateX(
+      ${({ $isMobileOpen }) => ($isMobileOpen ? "0" : "-100%")}
+    );
+  }
 `;
 
 const LogoArea = styled.div`
@@ -335,5 +351,9 @@ const ToggleButton = styled.button`
     color: #ffffff;
     background: #34415e;
     transform: translateY(-50%) scale(1.08);
+  }
+
+  @media (max-width: 768px) {
+    display: none;
   }
 `;

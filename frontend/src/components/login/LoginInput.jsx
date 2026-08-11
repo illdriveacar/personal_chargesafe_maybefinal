@@ -47,6 +47,11 @@ const Label = styled.label`
   margin-bottom: 10px;
   color: #40506a;
   font-size: 15px;
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+  }
+
   font-weight: 700;
 `;
 
@@ -76,6 +81,11 @@ const Input = styled.input`
   color: #263247;
   background-color: #ffffff;
   font-size: 15px;
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+  }
+
   font-weight: 500;
   transition:
     border-color 0.2s ease,

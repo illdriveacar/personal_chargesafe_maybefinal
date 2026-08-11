@@ -15,6 +15,11 @@ const GlobalStyle = createGlobalStyle`
     min-height: 100%;
   }
 
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   body {
     margin: 0;
     color: #182033;
@@ -25,6 +30,15 @@ const GlobalStyle = createGlobalStyle`
       BlinkMacSystemFont,
       "Segoe UI",
       sans-serif;
+    
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    line-height: 1.45;
+
+    overflow-x: hidden;
+
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   #root {
@@ -41,6 +55,14 @@ const GlobalStyle = createGlobalStyle`
 
   button {
     border: none;
+  }
+
+  @media (max-width: 768px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
   }
 
   a {

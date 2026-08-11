@@ -32,6 +32,7 @@ const MainPage = ({ onLogout }) => {
   const [emergencyView, setEmergencyView] = useState(null);
   const [emergencyTemperature, setEmergencyTemperature] = useState(null);
   const [callPreviousView, setCallPreviousView] = useState("main");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [common, setCommon] = useState(null);
   const [devices, setDevices] = useState([]);
@@ -259,6 +260,13 @@ const MainPage = ({ onLogout }) => {
             common?.chargingStatus
           }
           onEmergencyClick={handleEmergencyOpen}
+          isMobileOpen={isMobileMenuOpen}
+          onCloseMobile={() => setIsMobileMenuOpen(false)}
+        />
+
+        <Overlay
+          $isOpen={isMobileMenuOpen}
+          onClick={() => setIsMobileMenuOpen(false)}
         />
 
         <MainArea $isCollapsed={isCollapsed}>
@@ -279,6 +287,9 @@ const MainPage = ({ onLogout }) => {
             }
             onOpenNotificationCenter={
               handleOpenNotificationCenter
+            }
+            onOpenMobileMenu={
+              () => setIsMobileMenuOpen(true)
             }
           />
 
@@ -350,6 +361,18 @@ const Layout = styled.div`
   transition: background 0.25s ease;
 `;
 
+const Overlay = styled.div`
+  display: none;
+
+  @media (max-width: 768px) {
+    display: ${({ $isOpen }) => ($isOpen ? "block" : "none")};
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    background: #0f172a73;
+  }
+`;
+
 const MainArea = styled.div`
   width: auto;
   min-height: 100vh;
@@ -362,6 +385,10 @@ const MainArea = styled.div`
   transition:
     margin-left 0.3s ease,
     background 0.25s ease;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+  }
 `;
 
 const PageContent = styled.main`

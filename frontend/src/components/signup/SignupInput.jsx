@@ -58,6 +58,11 @@ const Label = styled.label`
   color: #354158;
 
   font-size: 13px;
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+  }
+
   font-weight: 750;
 `;
 
@@ -114,6 +119,11 @@ const Input = styled.input`
   background: transparent;
 
   font-size: 13px;
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+  }
+
   font-weight: 550;
 
   &::placeholder {
