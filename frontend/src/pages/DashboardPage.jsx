@@ -22,12 +22,13 @@ const DashboardPage = ({ deviceId, onEmergencyClick }) => {
     const load = () => {
       getDashboard(deviceId)
         .then((data) => {
-          if (!cancelled) return;
+          if (cancelled) return;
           setDashboardData(data);
           setError("");
         })
         .catch((requestError) => {
-          if (!cancelled) alert(requestError.message);
+          // 5초마다 재시도하므로 alert 대신 화면에 표시한다 (창이 반복해서 뜨는 것을 막는다)
+          if (!cancelled) setError(requestError.message);
         });
     };
     
