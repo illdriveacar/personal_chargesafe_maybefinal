@@ -125,6 +125,13 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
       ? "normal"
       : "warning";
 
+  // 충전기 온도도 배터리 온도와 같은 차단 기준을 쓴다
+  const chargerTemperatureStatus =
+    latestMeasurement?.chargerTemperature != null &&
+    latestMeasurement.chargerTemperature < limits.temperature
+      ? "normal"
+      : "warning";
+
   const currentStatus =
     latestMeasurement?.current != null && latestMeasurement.current < limits.current
       ? "normal"
@@ -219,26 +226,45 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
           />
 
           <ChartsSection>
-            <MonitoringChartCard
-              title="배터리 온도"
-              threshold={`기준 ${limits.temperature}°C 미만`}
-              value={
-                latestMeasurement.temperature == null
-                  ? "-"
-                  : Number(
-                    latestMeasurement.temperature
-                  ).toFixed(1)
-              }
-              unit="°C"
-              status={temperatureStatus}
-              data={measurements}
-              valueKey="temperature"
-              color="#e96619"
-              icon={Thermometer}
-              variant="large"
-            />
+            <ChartRow>
+              <MonitoringChartCard
+                title="배터리 온도"
+                threshold={`기준 ${limits.temperature}°C 미만`}
+                value={
+                  latestMeasurement.temperature == null
+                    ? "-"
+                    : Number(
+                      latestMeasurement.temperature
+                    ).toFixed(1)
+                }
+                unit="°C"
+                status={temperatureStatus}
+                data={measurements}
+                valueKey="temperature"
+                color="#e96619"
+                icon={Thermometer}
+              />
 
-            <BottomCharts>
+              <MonitoringChartCard
+                title="충전기 온도"
+                threshold={`기준 ${limits.temperature}°C 미만`}
+                value={
+                  latestMeasurement.chargerTemperature == null
+                    ? "-"
+                    : Number(
+                      latestMeasurement.chargerTemperature
+                    ).toFixed(1)
+                }
+                unit="°C"
+                status={chargerTemperatureStatus}
+                data={measurements}
+                valueKey="chargerTemperature"
+                color="#d63b4a"
+                icon={Thermometer}
+              />
+            </ChartRow>
+
+            <ChartRow>
               <MonitoringChartCard
                 title="충전 전류"
                 threshold={`기준 ${limits.current}A 미만`}
@@ -274,7 +300,7 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
                 color="#6555ef"
                 icon={Activity}
               />
-            </BottomCharts>
+            </ChartRow>
           </ChartsSection>
         </>
       )}
@@ -337,7 +363,8 @@ const ChartsSection = styled.section`
   margin-top: 17px;
 `;
 
-const BottomCharts = styled.div`
+// 그래프 두 개를 나란히 놓는 줄 — 윗줄은 두 온도, 아랫줄은 전류·전압
+const ChartRow = styled.div`
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;

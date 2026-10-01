@@ -73,13 +73,27 @@ const DashboardPage = ({ deviceId, onEmergencyClick }) => {
               icon={Thermometer}
               value={dashboardData.temperature.value ?? "-"}
               unit={dashboardData.temperature.unit}
-              label="온도"
+              label="배터리 온도"
               status={dashboardData.temperature.status}
               progress={dashboardData.temperature.progress}
               valueColor="#E76408"
               iconColor="#EF851A"
               iconBackground="#FFF5E9"
               progressColor="#F0B15C"
+            />
+
+            {/* 충전기 표면 온도 — 예전 서버는 이 값을 주지 않으므로 없으면 "-" 로 표시 */}
+            <SensorCard
+              icon={Thermometer}
+              value={dashboardData.chargerTemperature?.value ?? "-"}
+              unit={dashboardData.chargerTemperature?.unit ?? "°C"}
+              label="충전기 온도"
+              status={dashboardData.chargerTemperature?.status ?? "수신 대기"}
+              progress={dashboardData.chargerTemperature?.progress ?? 0}
+              valueColor="#D63B4A"
+              iconColor="#E25563"
+              iconBackground="#FFF0F2"
+              progressColor="#F08A95"
             />
 
             <SensorCard
@@ -157,12 +171,21 @@ const RightContent = styled.div`
   min-width: 0;
 `;
 
+// 센서 카드 4장 — 오른쪽 영역이 좁아지는 구간(1101~1400px)과 모바일에서는 2×2 로 놓는다
 const SensorGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 
+  @media (min-width: 1101px) and (max-width: 1400px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   @media (max-width: 760px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 420px) {
     grid-template-columns: 1fr;
   }
 `;
