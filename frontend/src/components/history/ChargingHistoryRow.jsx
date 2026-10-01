@@ -1,14 +1,21 @@
 import styled from "styled-components";
 
+// 충전 상태별 배지 문구와 색 — stopped 는 비상정지 버튼으로 사람이 멈춘 경우
+const STATUS_STYLES = {
+  blocked: { label: "자동 차단", dot: "#ef6a6d", color: "#df3d40", background: "#fff1ef" },
+  stopped: { label: "비상정지", dot: "#f0a020", color: "#b86e00", background: "#fff7e6" },
+  charging: { label: "충전 중", dot: "#5877f7", color: "#3f54d8", background: "#eef2ff" },
+  completed: { label: "정상 완료", dot: "#69d67b", color: "#438e4e", background: "#f1fbf2" },
+};
+
 const ChargingHistoryRow = ({ history }) => {
-  const isBlocked = history.status === "blocked";
-  const isCharging = history.status === "charging";
+  const statusStyle = STATUS_STYLES[history.status] ?? STATUS_STYLES.completed;
   const isDanger = history.maxTemperature >= 50;
 
   return (
     <Row>
       <DateCell>
-        <StatusDot $isBlocked={isBlocked} $isCharging={isCharging} />
+        <StatusDot $color={statusStyle.dot} />
 
         <DateText>
           <DateTitle>{history.date}</DateTitle>
@@ -27,8 +34,8 @@ const ChargingHistoryRow = ({ history }) => {
       </TemperatureCell>
 
       <StatusCell>
-        <StatusBadge $isBlocked={isBlocked} $isCharging={isCharging}>
-          {isBlocked ? "자동 차단" : isCharging ? "충전 중" : "정상 완료"}
+        <StatusBadge $color={statusStyle.color} $background={statusStyle.background}>
+          {statusStyle.label}
         </StatusBadge>
       </StatusCell>
     </Row>
@@ -68,8 +75,7 @@ const StatusDot = styled.span`
   height: 8px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: ${({ $isBlocked, $isCharging }) =>
-    $isBlocked ? "#ef6a6d" : $isCharging ? "#5877f7" : "#69d67b"};
+  background: ${({ $color }) => $color};
 `;
 
 const DateText = styled.div``;
@@ -122,10 +128,8 @@ const StatusBadge = styled.span`
   min-width: 65px;
   padding: 5px 10px;
   border-radius: 13px;
-  color: ${({ $isBlocked, $isCharging }) =>
-    $isBlocked ? "#df3d40" : $isCharging ? "#3f54d8" : "#438e4e"};
-  background: ${({ $isBlocked, $isCharging }) =>
-    $isBlocked ? "#fff1ef" : $isCharging ? "#eef2ff" : "#f1fbf2"};
+  color: ${({ $color }) => $color};
+  background: ${({ $background }) => $background};
   font-size: 10px;
   font-weight: 750;
 `;
