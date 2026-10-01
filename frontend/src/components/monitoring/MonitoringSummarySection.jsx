@@ -2,18 +2,19 @@ import styled from "styled-components";
 
 import MetricSummaryCard from "./MetricSummaryCard";
 
+// values·limits 는 화면용 단위로 받는다 (온도 ℃, 전류 mA, 전압 V)
 const MonitoringSummarySection = ({
-  latestMeasurement,
+  values,
   limits,
 }) => {
-  if (!latestMeasurement) {
+  if (!values) {
     return null;
   }
 
-  const temperature = latestMeasurement.temperature;
-  const chargerTemperature = latestMeasurement.chargerTemperature;
-  const current = latestMeasurement.current;
-  const voltage = latestMeasurement.voltage;
+  const temperature = values.temperature;
+  const chargerTemperature = values.chargerTemperature;
+  const current = values.current;
+  const voltage = values.voltage;
 
   const temperatureStatus =
     temperature != null && temperature < limits.temperature
@@ -61,9 +62,9 @@ const MonitoringSummarySection = ({
 
       <MetricSummaryCard
         label="충전 전류"
-        value={format(current, 2)}
-        unit="A"
-        threshold={`기준 ${limits.current}A 미만`}
+        value={format(current, 0)}
+        unit="mA"
+        threshold={`기준 ${limits.current}mA 미만`}
         status={currentStatus}
         valueColor="#4d63f5"
       />

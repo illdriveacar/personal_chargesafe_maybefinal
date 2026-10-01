@@ -13,8 +13,15 @@ import TimeRangeTabs from "../components/monitoring/TimeRangeTabs";
 
 const REALTIME_REFRESH_INTERVAL = 5000;
 
-// 서버가 limits 를 주지 않을 때 쓰는 기본 위험 기준 (서버 기본값과 같음)
+// 서버가 limits 를 주지 않을 때 쓰는 기본 위험 기준 (서버 기본값과 같음, 전류는 A)
 const DEFAULT_LIMITS = { temperature: 50, current: 4, voltage: 14.5 };
+
+// 전류는 서버가 A 로 주고, 화면에는 실제 기기(LCD·시리얼)와 같은 mA 로 보여 준다
+const toMilliAmp = (amp) =>
+  amp == null ? null : Math.round(Number(amp) * 1000);
+
+const formatValue = (value, digits) =>
+  value == null ? "-" : Number(value).toFixed(digits);
 
 const MonitoringPage = ({ deviceId, selectedDevice }) => {
   const [selectedRange, setSelectedRange] =
@@ -22,6 +29,8 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
 
   const [measurements, setMeasurements] = useState([]);
   const [limits, setLimits] = useState(DEFAULT_LIMITS);
+  // 기기가 마지막으로 보낸 지금 값 (대시보드와 같은 값)
+  const [live, setLive] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -43,6 +52,7 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
 
         setMeasurements(response?.measurements ?? []);
         setLimits({ ...DEFAULT_LIMITS, ...response?.limits });
+        setLive(response?.live ?? null);
         setError("");
         setIsLoading(false);
       } catch (requestError) {
@@ -87,6 +97,7 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
 
         setMeasurements(response?.measurements ?? []);
         setLimits({ ...DEFAULT_LIMITS, ...response?.limits });
+        setLive(response?.live ?? null);
         setError("");
       } catch (requestError) {
         if (isCancelled) {
@@ -120,25 +131,49 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
     return measurements[measurements.length - 1];
   }, [measurements]);
 
+  // 그래프용 데이터 — 전류를 mA 로 바꾼 칸(currentMa)을 더한다
+  const chartData = useMemo(
+    () =>
+      measurements.map((point) => ({
+        ...point,
+        currentMa: toMilliAmp(point.current),
+      })),
+    [measurements]
+  );
+
+  // 카드에 보이는 "지금 값" — 서버가 live 를 주면 대시보드와 같은 현재 상태를 쓰고,
+  // (예전 서버라서) 없으면 그래프의 마지막 점을 쓴다.
+  // 그래프는 충전 중 기록만 담기 때문에, 차단·비상정지로 충전이 멈추면 그래프는 멈추고 카드만 바뀐다.
+  const nowValues = live ?? latestMeasurement;
+  const displayValues = nowValues && {
+    ...nowValues,
+    current: toMilliAmp(nowValues.current),
+  };
+  const displayLimits = {
+    ...limits,
+    current: toMilliAmp(limits.current),
+  };
+  const isStopped = live != null && !live.isCharging;
+
   const temperatureStatus =
-    latestMeasurement?.temperature != null && latestMeasurement.temperature < limits.temperature
+    displayValues?.temperature != null && displayValues.temperature < displayLimits.temperature
       ? "normal"
       : "warning";
 
   // 충전기 온도도 배터리 온도와 같은 차단 기준을 쓴다
   const chargerTemperatureStatus =
-    latestMeasurement?.chargerTemperature != null &&
-    latestMeasurement.chargerTemperature < limits.temperature
+    displayValues?.chargerTemperature != null &&
+    displayValues.chargerTemperature < displayLimits.temperature
       ? "normal"
       : "warning";
 
   const currentStatus =
-    latestMeasurement?.current != null && latestMeasurement.current < limits.current
+    displayValues?.current != null && displayValues.current < displayLimits.current
       ? "normal"
       : "warning";
 
   const voltageStatus =
-    latestMeasurement?.voltage != null && latestMeasurement.voltage < limits.voltage
+    displayValues?.voltage != null && displayValues.voltage < displayLimits.voltage
       ? "normal"
       : "warning";
 
@@ -163,6 +198,8 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
       });
 
       setMeasurements(response?.measurements ?? []);
+      setLimits({ ...DEFAULT_LIMITS, ...response?.limits });
+      setLive(response?.live ?? null);
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -199,13 +236,13 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
         </StateBox>
       )}
 
-      {deviceId && isLoading && measurements.length === 0 && (
+      {deviceId && isLoading && !displayValues && (
         <StateBox>
           모니터링 데이터를 불러오는 중입니다.
         </StateBox>
       )}
 
-      {error && measurements.length === 0 && (
+      {error && !displayValues && (
         <ErrorBox>
           <p>{error}</p>
 
@@ -218,98 +255,85 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
         </ErrorBox>
       )}
 
-      {latestMeasurement && (
+      {displayValues && (
         <>
+          {isStopped && (
+            <StoppedNotice>
+              충전 중이 아닙니다 (차단 또는 비상정지). 카드는 지금 측정값이고,
+              그래프는 마지막으로 충전 중이던 기록까지 표시합니다.
+            </StoppedNotice>
+          )}
+
           <MonitoringSummarySection
-            latestMeasurement={latestMeasurement}
-            limits={limits}
+            values={displayValues}
+            limits={displayLimits}
           />
-
-          <ChartsSection>
-            <ChartRow>
-              <MonitoringChartCard
-                title="배터리 온도"
-                threshold={`기준 ${limits.temperature}°C 미만`}
-                value={
-                  latestMeasurement.temperature == null
-                    ? "-"
-                    : Number(
-                      latestMeasurement.temperature
-                    ).toFixed(1)
-                }
-                unit="°C"
-                status={temperatureStatus}
-                data={measurements}
-                valueKey="temperature"
-                color="#e96619"
-                icon={Thermometer}
-              />
-
-              <MonitoringChartCard
-                title="충전기 온도"
-                threshold={`기준 ${limits.temperature}°C 미만`}
-                value={
-                  latestMeasurement.chargerTemperature == null
-                    ? "-"
-                    : Number(
-                      latestMeasurement.chargerTemperature
-                    ).toFixed(1)
-                }
-                unit="°C"
-                status={chargerTemperatureStatus}
-                data={measurements}
-                valueKey="chargerTemperature"
-                color="#d63b4a"
-                icon={Thermometer}
-              />
-            </ChartRow>
-
-            <ChartRow>
-              <MonitoringChartCard
-                title="충전 전류"
-                threshold={`기준 ${limits.current}A 미만`}
-                value={
-                  latestMeasurement.current == null
-                  ? "-"
-                  : Number(
-                    latestMeasurement.current
-                  ).toFixed(2)
-                }
-                unit="A"
-                status={currentStatus}
-                data={measurements}
-                valueKey="current"
-                color="#4d63f5"
-                icon={Zap}
-              />
-
-              <MonitoringChartCard
-                title="배터리 전압"
-                threshold={`기준 ${limits.voltage}V 미만`}
-                value={
-                  latestMeasurement.voltage == null
-                  ? "-"
-                  : Number(
-                    latestMeasurement.voltage
-                  ).toFixed(2)
-                }
-                unit="V"
-                status={voltageStatus}
-                data={measurements}
-                valueKey="voltage"
-                color="#6555ef"
-                icon={Activity}
-              />
-            </ChartRow>
-          </ChartsSection>
         </>
+      )}
+
+      {measurements.length > 0 && (
+        <ChartsSection>
+          <ChartRow>
+            <MonitoringChartCard
+              title="배터리 온도"
+              threshold={`기준 ${displayLimits.temperature}°C 미만`}
+              value={formatValue(displayValues?.temperature, 1)}
+              unit="°C"
+              status={temperatureStatus}
+              data={chartData}
+              valueKey="temperature"
+              color="#e96619"
+              icon={Thermometer}
+            />
+
+            <MonitoringChartCard
+              title="충전기 온도"
+              threshold={`기준 ${displayLimits.temperature}°C 미만`}
+              value={formatValue(displayValues?.chargerTemperature, 1)}
+              unit="°C"
+              status={chargerTemperatureStatus}
+              data={chartData}
+              valueKey="chargerTemperature"
+              color="#d63b4a"
+              icon={Thermometer}
+            />
+          </ChartRow>
+
+          <ChartRow>
+            <MonitoringChartCard
+              title="충전 전류"
+              threshold={`기준 ${displayLimits.current}mA 미만`}
+              value={formatValue(displayValues?.current, 0)}
+              unit="mA"
+              status={currentStatus}
+              data={chartData}
+              valueKey="currentMa"
+              color="#4d63f5"
+              icon={Zap}
+            />
+
+            <MonitoringChartCard
+              title="배터리 전압"
+              threshold={`기준 ${displayLimits.voltage}V 미만`}
+              value={formatValue(displayValues?.voltage, 2)}
+              unit="V"
+              status={voltageStatus}
+              data={chartData}
+              valueKey="voltage"
+              color="#6555ef"
+              icon={Activity}
+            />
+          </ChartRow>
+        </ChartsSection>
       )}
 
       {!isLoading &&
         !error &&
         measurements.length === 0 && (
           <StateBox>
-            표시할 모니터링 데이터가 없습니다.
+            {displayValues
+              ? "이 구간에는 충전 중 기록이 없습니다. 그래프는 충전 중일 때만 기록됩니다."
+              : "표시할 모니터링 데이터가 없습니다."}
           </StateBox>
         )}
     </PageContainer>
@@ -372,6 +396,18 @@ const ChartRow = styled.div`
   @media (max-width: 850px) {
     grid-template-columns: 1fr;
   }
+`;
+
+const StoppedNotice = styled.p`
+  margin-top: 17px;
+  padding: 12px 16px;
+  border: 1px solid #f2df9d;
+  border-radius: 14px;
+  color: #ba6e00;
+  background: #fffbed;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.6;
 `;
 
 const StateBox = styled.div`
