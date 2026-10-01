@@ -68,13 +68,22 @@ export const chargeModes = [
 
 export const temperatureOptions = [
   {
+    value: 35,
+    riskLabel: "시연용",
+    titleColor: "#6b4fd8",
+    background: "#f4f1ff",
+    border: "#d9cffb",
+    description:
+      "시연용 기준입니다. 손이나 따뜻한 물로 센서를 데워 차단 동작을 보여 줄 때 씁니다. 실제 사용에는 권장하지 않습니다.",
+  },
+  {
     value: 40,
-    riskLabel: "시연·테스트용",
+    riskLabel: "테스트용",
     titleColor: "#1f8a7d",
     background: "#eefbf8",
     border: "#bfe9e1",
     description:
-      "가장 엄격한 기준입니다. 저전압 시연이나 센서 동작 확인에 적합합니다.",
+      "가장 엄격한 실사용 기준입니다. 저전압 실험이나 센서 동작 확인에 적합합니다.",
   },
   {
     value: 45,

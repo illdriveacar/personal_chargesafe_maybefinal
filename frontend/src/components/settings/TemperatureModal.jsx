@@ -8,7 +8,7 @@ import {
 
 import { temperatureOptions } from "../../data/settingsData";
 
-const MIN_TEMPERATURE = 40;
+const MIN_TEMPERATURE = 35;   // 35℃ 는 시연용 (서버도 35~65 허용)
 const MAX_TEMPERATURE = 65;
 
 const TemperatureModal = ({
@@ -140,9 +140,9 @@ const TemperatureModal = ({
             </RangeBar>
 
             <RangeLabels>
-              <span>40°C</span>
-              <span>52.5°C</span>
-              <span>65°C</span>
+              <span>{MIN_TEMPERATURE}°C</span>
+              <span>{(MIN_TEMPERATURE + MAX_TEMPERATURE) / 2}°C</span>
+              <span>{MAX_TEMPERATURE}°C</span>
             </RangeLabels>
           </TemperatureRange>
 
