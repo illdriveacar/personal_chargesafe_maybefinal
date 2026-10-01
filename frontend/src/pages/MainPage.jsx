@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import styled, { ThemeProvider } from "styled-components";
 
 import DashboardHeader from "../components/dashboard/DashboardHeader";
@@ -24,6 +24,9 @@ import {
   readNotification,
   readAllNotifications,
 } from "../api/notifications"
+
+// 알림 목록을 다시 불러오는 주기 — 대시보드(5초)와 비슷하게 맞춘다
+const NOTIFICATION_REFRESH_MS = 10000;
 
 const MainPage = ({ onLogout }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -57,6 +60,23 @@ const MainPage = ({ onLogout }) => {
     })();
   }, []);
 
+  // 알림 목록 새로고침. 예전에는 로그인 때 한 번만 불러와서, 대시보드에는 뜨는
+  // 새 알림(비상정지·위험 등)이 알림 센터·종 아이콘에는 페이지를 새로 열기 전까지 안 보였다.
+  // 주기적으로 도는 요청이라 실패해도 창을 띄우지 않는다 (다음 주기에 다시 시도).
+  const refreshNotifications = useCallback(async () => {
+    try {
+      const notificationData = await listNotifications();
+      setNotifications(notificationData.items);
+    } catch (error) {
+      console.warn("알림 목록 갱신 실패:", error.message);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(refreshNotifications, NOTIFICATION_REFRESH_MS);
+    return () => clearInterval(timer);
+  }, [refreshNotifications]);
+
   const reloadDevices = async () => {
     try {
       const [deviceList, me] = await Promise.all([listDevices(), getMe()]);
@@ -80,6 +100,9 @@ const MainPage = ({ onLogout }) => {
 
   const handleSelectMenu = (menuId) => {
     setSelectedMenu(menuId);
+
+    // 알림 센터를 여는 순간에는 주기를 기다리지 않고 바로 최신 목록을 가져온다
+    if (menuId === "notifications") refreshNotifications();
 
     if (menuId !== "monitoring") {
       setSelectedMonitoringDevice(null);
@@ -150,6 +173,7 @@ const MainPage = ({ onLogout }) => {
   // 알림 센터 전체보기
   const handleOpenNotificationCenter = () => {
     setSelectedMenu("notifications");
+    refreshNotifications();
   };
 
   const getPageTitle = () => {
