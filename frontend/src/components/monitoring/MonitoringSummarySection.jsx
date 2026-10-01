@@ -4,6 +4,7 @@ import MetricSummaryCard from "./MetricSummaryCard";
 
 const MonitoringSummarySection = ({
   latestMeasurement,
+  limits,
 }) => {
   if (!latestMeasurement) {
     return null;
@@ -14,17 +15,17 @@ const MonitoringSummarySection = ({
   const voltage = latestMeasurement.voltage;
 
   const temperatureStatus =
-    temperature != null && temperature < 50
+    temperature != null && temperature < limits.temperature
       ? "normal"
       : "warning";
 
   const currentStatus =
-    current != null && current < 4
+    current != null && current < limits.current
       ? "normal"
       : "warning";
 
   const voltageStatus =
-    voltage != null && voltage < 14.5
+    voltage != null && voltage < limits.voltage
       ? "normal"
       : "warning";
 
@@ -37,7 +38,7 @@ const MonitoringSummarySection = ({
         label="배터리 온도"
         value={format(temperature, 1)}
         unit="°C"
-        threshold="기준 50°C 미만"
+        threshold={`기준 ${limits.temperature}°C 미만`}
         status={temperatureStatus}
         valueColor="#dd5a00"
       />
@@ -46,7 +47,7 @@ const MonitoringSummarySection = ({
         label="충전 전류"
         value={format(current, 2)}
         unit="A"
-        threshold="기준 4A 미만"
+        threshold={`기준 ${limits.current}A 미만`}
         status={currentStatus}
         valueColor="#4d63f5"
       />
@@ -55,7 +56,7 @@ const MonitoringSummarySection = ({
         label="배터리 전압"
         value={format(voltage, 2)}
         unit="V"
-        threshold="기준 14.5V 미만"
+        threshold={`기준 ${limits.voltage}V 미만`}
         status={voltageStatus}
         valueColor="#6045ec"
       />

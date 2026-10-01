@@ -24,7 +24,10 @@ const TemperatureModal = ({
       temperatureOptions.find(
         (option) =>
           option.value === selectedTemperature
-      ) ?? temperatureOptions[1],
+      ) ??
+      temperatureOptions.find(
+        (option) => option.value === 50
+      ),
     [selectedTemperature]
   );
 
@@ -295,7 +298,7 @@ const SectionLabel = styled.h3`
 
 const TemperatureGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(${temperatureOptions.length}, minmax(0, 1fr));
   gap: 9px;
   margin-top: 11px;
 `;

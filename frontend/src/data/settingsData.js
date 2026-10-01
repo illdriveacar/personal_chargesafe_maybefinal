@@ -68,6 +68,15 @@ export const chargeModes = [
 
 export const temperatureOptions = [
   {
+    value: 40,
+    riskLabel: "시연·테스트용",
+    titleColor: "#1f8a7d",
+    background: "#eefbf8",
+    border: "#bfe9e1",
+    description:
+      "가장 엄격한 기준입니다. 저전압 시연이나 센서 동작 확인에 적합합니다.",
+  },
+  {
     value: 45,
     riskLabel: "위험도 낮음",
     titleColor: "#4c9d58",

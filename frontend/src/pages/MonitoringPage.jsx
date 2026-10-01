@@ -13,11 +13,15 @@ import TimeRangeTabs from "../components/monitoring/TimeRangeTabs";
 
 const REALTIME_REFRESH_INTERVAL = 5000;
 
+// 서버가 limits 를 주지 않을 때 쓰는 기본 위험 기준 (서버 기본값과 같음)
+const DEFAULT_LIMITS = { temperature: 50, current: 4, voltage: 14.5 };
+
 const MonitoringPage = ({ deviceId, selectedDevice }) => {
   const [selectedRange, setSelectedRange] =
     useState("realtime");
 
   const [measurements, setMeasurements] = useState([]);
+  const [limits, setLimits] = useState(DEFAULT_LIMITS);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -38,6 +42,7 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
         }
 
         setMeasurements(response?.measurements ?? []);
+        setLimits({ ...DEFAULT_LIMITS, ...response?.limits });
         setError("");
         setIsLoading(false);
       } catch (requestError) {
@@ -81,6 +86,7 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
         }
 
         setMeasurements(response?.measurements ?? []);
+        setLimits({ ...DEFAULT_LIMITS, ...response?.limits });
         setError("");
       } catch (requestError) {
         if (isCancelled) {
@@ -115,17 +121,17 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
   }, [measurements]);
 
   const temperatureStatus =
-    latestMeasurement?.temperature != null && latestMeasurement.temperature < 50
+    latestMeasurement?.temperature != null && latestMeasurement.temperature < limits.temperature
       ? "normal"
       : "warning";
 
   const currentStatus =
-    latestMeasurement?.current != null && latestMeasurement.current < 4
+    latestMeasurement?.current != null && latestMeasurement.current < limits.current
       ? "normal"
       : "warning";
 
   const voltageStatus =
-    latestMeasurement?.voltage != null && latestMeasurement.voltage < 14.5
+    latestMeasurement?.voltage != null && latestMeasurement.voltage < limits.voltage
       ? "normal"
       : "warning";
 
@@ -209,12 +215,13 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
         <>
           <MonitoringSummarySection
             latestMeasurement={latestMeasurement}
+            limits={limits}
           />
 
           <ChartsSection>
             <MonitoringChartCard
               title="배터리 온도"
-              threshold="기준 50°C 미만"
+              threshold={`기준 ${limits.temperature}°C 미만`}
               value={
                 latestMeasurement.temperature == null
                   ? "-"
@@ -234,7 +241,7 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
             <BottomCharts>
               <MonitoringChartCard
                 title="충전 전류"
-                threshold="기준 4A 미만"
+                threshold={`기준 ${limits.current}A 미만`}
                 value={
                   latestMeasurement.current == null
                   ? "-"
@@ -252,7 +259,7 @@ const MonitoringPage = ({ deviceId, selectedDevice }) => {
 
               <MonitoringChartCard
                 title="배터리 전압"
-                threshold="기준 14.5V 미만"
+                threshold={`기준 ${limits.voltage}V 미만`}
                 value={
                   latestMeasurement.voltage == null
                   ? "-"
