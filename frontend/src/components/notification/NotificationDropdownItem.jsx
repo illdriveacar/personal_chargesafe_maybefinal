@@ -1,36 +1,6 @@
 import styled from "styled-components";
-import {
-  Bell,
-  CheckCircle2,
-  CircleAlert,
-  TriangleAlert,
-} from "lucide-react";
 
-const typeConfig = {
-  danger: {
-    icon: TriangleAlert,
-    color: "#ef5c60",
-    background: "#fff0f0",
-  },
-
-  warning: {
-    icon: CircleAlert,
-    color: "#e9a914",
-    background: "#fff8df",
-  },
-
-  success: {
-    icon: CheckCircle2,
-    color: "#72bf7c",
-    background: "#effbf1",
-  },
-
-  info: {
-    icon: Bell,
-    color: "#6f8df7",
-    background: "#eef3ff",
-  },
-};
+import { typeConfig } from "./notificationTypes";
 
 const NotificationDropdownItem = ({
   notification,

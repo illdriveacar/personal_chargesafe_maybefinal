@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import styled, { ThemeProvider } from "styled-components";
 
 import DashboardHeader from "../components/dashboard/DashboardHeader";
@@ -7,6 +7,7 @@ import Sidebar from "../components/dashboard/Sidebar";
 import CallConfirmModal from "../components/emergency/CallConfirmModal";
 import EmergencyGuideModal from "../components/emergency/EmergencyGuideModal";
 import EmergencyModal from "../components/emergency/EmergencyModal";
+import NotificationToast from "../components/notification/NotificationToast";
 
 import { dashboardTheme } from "../styles/dashboardTheme";
 
@@ -25,8 +26,10 @@ import {
   readAllNotifications,
 } from "../api/notifications"
 
-// 알림 목록을 다시 불러오는 주기 — 대시보드(5초)와 비슷하게 맞춘다
-const NOTIFICATION_REFRESH_MS = 10000;
+// 알림 목록을 다시 불러오는 주기 — 대시보드(5초)와 같게 맞춘다
+const NOTIFICATION_REFRESH_MS = 5000;
+// 새 알림 팝업을 한 번에 몇 개까지 쌓아 둘지
+const MAX_TOASTS = 3;
 
 const MainPage = ({ onLogout }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -41,6 +44,42 @@ const MainPage = ({ onLogout }) => {
   const [devices, setDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  // 어느 화면에 있든 오른쪽 위에 띄우는 새 알림 팝업
+  const [toasts, setToasts] = useState([]);
+  // 이미 본 알림 id — 처음 불러온 목록은 팝업으로 띄우지 않으려고 첫 로드 전에는 null
+  const knownNotificationIds = useRef(null);
+
+  // 알림 목록을 반영하고, 처음 보는 미확인 알림은 팝업으로 띄운다
+  const applyNotifications = useCallback((items) => {
+    setNotifications(items);
+
+    const known = knownNotificationIds.current;
+    if (known) {
+      const fresh = items.filter(
+        (notification) => !known.has(notification.id) && !notification.isRead
+      );
+      if (fresh.length) {
+        setToasts((previous) => [...fresh, ...previous].slice(0, MAX_TOASTS));
+      }
+    }
+
+    knownNotificationIds.current = new Set([
+      ...(known ?? []),
+      ...items.map((notification) => notification.id),
+    ]);
+  }, []);
+
+  // 알림 목록 새로고침. 예전에는 로그인 때 한 번만 불러와서, 대시보드에는 뜨는
+  // 새 알림(비상정지·위험 등)이 알림 센터·종 아이콘에는 페이지를 새로 열기 전까지 안 보였다.
+  // 주기적으로 도는 요청이라 실패해도 창을 띄우지 않는다 (다음 주기에 다시 시도).
+  const refreshNotifications = useCallback(async () => {
+    try {
+      const notificationData = await listNotifications();
+      applyNotifications(notificationData.items);
+    } catch (error) {
+      console.warn("알림 목록 갱신 실패:", error.message);
+    }
+  }, [applyNotifications]);
 
   useEffect(() => {
     (async () => {
@@ -53,29 +92,30 @@ const MainPage = ({ onLogout }) => {
         setCommon(me);
         setDevices(deviceList);
         setSelectedDeviceId(deviceList[0]?.deviceId ?? null);
-        setNotifications(notificationData.items);
+        applyNotifications(notificationData.items);
       } catch (error) {
         alert(error.message);
       }
     })();
-  }, []);
-
-  // 알림 목록 새로고침. 예전에는 로그인 때 한 번만 불러와서, 대시보드에는 뜨는
-  // 새 알림(비상정지·위험 등)이 알림 센터·종 아이콘에는 페이지를 새로 열기 전까지 안 보였다.
-  // 주기적으로 도는 요청이라 실패해도 창을 띄우지 않는다 (다음 주기에 다시 시도).
-  const refreshNotifications = useCallback(async () => {
-    try {
-      const notificationData = await listNotifications();
-      setNotifications(notificationData.items);
-    } catch (error) {
-      console.warn("알림 목록 갱신 실패:", error.message);
-    }
-  }, []);
+  }, [applyNotifications]);
 
   useEffect(() => {
     const timer = setInterval(refreshNotifications, NOTIFICATION_REFRESH_MS);
     return () => clearInterval(timer);
   }, [refreshNotifications]);
+
+  const closeToast = useCallback((notificationId) => {
+    setToasts((previous) =>
+      previous.filter((toast) => toast.id !== notificationId)
+    );
+  }, []);
+
+  // 팝업을 누르면 알림 센터로 이동한다
+  const handleOpenToast = (notificationId) => {
+    closeToast(notificationId);
+    setSelectedMenu("notifications");
+    refreshNotifications();
+  };
 
   const reloadDevices = async () => {
     try {
@@ -321,6 +361,12 @@ const MainPage = ({ onLogout }) => {
             {renderPageContent()}
           </PageContent>
         </MainArea>
+
+        <NotificationToast
+          toasts={toasts}
+          onClose={closeToast}
+          onOpen={handleOpenToast}
+        />
 
         {emergencyView === "main" && (
           <EmergencyModal
